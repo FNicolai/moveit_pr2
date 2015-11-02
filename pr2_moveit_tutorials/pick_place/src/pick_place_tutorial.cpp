@@ -43,19 +43,10 @@
 
 static const std::string ROBOT_DESCRIPTION="robot_description";
 
-void pick(moveit::planning_interface::MoveGroup &group)
+void pick(moveit::planning_interface::MoveGroup &group, geometry_msgs::PoseStamped p)
 {
   std::vector<moveit_msgs::Grasp> grasps;
 
-  geometry_msgs::PoseStamped p;
-  p.header.frame_id = "base_footprint";
-  p.pose.position.x = 0.32;
-  p.pose.position.y = -0.7;
-  p.pose.position.z = 0.5;
-  p.pose.orientation.x = 0;
-  p.pose.orientation.y = 0;
-  p.pose.orientation.z = 0;
-  p.pose.orientation.w = 1;
   moveit_msgs::Grasp g;
   g.grasp_pose = p;
 
@@ -84,19 +75,10 @@ void pick(moveit::planning_interface::MoveGroup &group)
   group.pick("part", grasps);
 }
 
-void place(moveit::planning_interface::MoveGroup &group)
+void place(moveit::planning_interface::MoveGroup &group, geometry_msgs::PoseStamped p)
 {
   std::vector<moveit_msgs::PlaceLocation> loc;
 
-  geometry_msgs::PoseStamped p;
-  p.header.frame_id = "base_footprint";
-  p.pose.position.x = 0.7;
-  p.pose.position.y = 0.0;
-  p.pose.position.z = 0.5;
-  p.pose.orientation.x = 0;
-  p.pose.orientation.y = 0;
-  p.pose.orientation.z = 0;
-  p.pose.orientation.w = 1;
   moveit_msgs::PlaceLocation g;
   g.place_pose = p;
 
@@ -217,11 +199,52 @@ int main(int argc, char **argv)
   // wait a bit for ros things to initialize
   ros::WallDuration(1.0).sleep();
 
-  pick(group);
+  ROS_INFO("Let's put this thing from A to B!");
+
+  //Pick pose
+  geometry_msgs::PoseStamped pickPose;
+  pickPose.header.frame_id = "base_footprint";
+  pickPose.pose.position.x = 0.32;
+  pickPose.pose.position.y = -0.7;
+  pickPose.pose.position.z = 0.5;
+  pickPose.pose.orientation.x = 0;
+  pickPose.pose.orientation.y = 0;
+  pickPose.pose.orientation.z = 0;
+  pickPose.pose.orientation.w = 1;
+
+  pick(group, pickPose);
 
   ros::WallDuration(1.0).sleep();
 
-  place(group);
+  geometry_msgs::PoseStamped placePose;
+  placePose.header.frame_id = "base_footprint";
+  placePose.pose.position.x = 0.7;
+  placePose.pose.position.y = 0.0;
+  placePose.pose.position.z = 0.5;
+  placePose.pose.orientation.x = 0;
+  placePose.pose.orientation.y = 0;
+  placePose.pose.orientation.z = 0;
+  placePose.pose.orientation.w = 1;
+
+  place(group, placePose);
+
+  ROS_INFO("Now we put it back!");
+  //Switch start and goal
+  geometry_msgs::PoseStamped tmp;
+
+  tmp = pickPose;
+  pickPose = placePose;
+  placePose = tmp;
+
+  //wait a bit
+  ros::WallDuration(5.0).sleep();
+
+  //put the object back to its old place
+  pick(group,pickPose);
+
+  ros::WallDuration(1.0).sleep();
+
+  //place(group, placePose);
 
   ros::waitForShutdown();
   return 0;
